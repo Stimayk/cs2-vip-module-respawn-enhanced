@@ -52,6 +52,11 @@ bool OnRespawnCommand(int iSlot, const char* szContent)
 		int iCount = g_pVIPCore->VIP_GetClientFeatureInt(iSlot, "RespawnEnhanced");
 		if(iCount > 0)
 		{
+            if(g_pRespawnTimers[iSlot] == nullptr && !g_isActive[iSlot])
+            {
+                g_pUtils->PrintToChat(iSlot, "%s %s", g_pVIPCore->VIP_GetTranslate("Prefix"), g_pVIPCore->VIP_GetTranslate("RespawnIsNotAvailable"));
+                return false;
+            }
 			if(iCount > g_iRespawns[iSlot] || iCount == 0)
 			{
 				CCSPlayerController* pPlayerController =  CCSPlayerController::FromSlot(iSlot);
@@ -205,6 +210,9 @@ void OnPlayerDeath(const char* sName, IGameEvent* event, bool bDontBroadcast)
 		{
 			return;
 		}
+		
+		bool bRespawnTimeExpired = g_pRespawnTimers[iSlot] == nullptr && !g_isActive[iSlot];
+		
 		if (g_pVIPCore->VIP_GetClientFeatureBool(iSlot, "AutoRespawn") && g_iRespawns[iSlot] < iCount && g_AisActive[iSlot])
 		{
 			if(GetOnlinePlayers() < g_pVIPCore->VIP_GetClientFeatureInt(iSlot, "AutoRespawnMinPlayers"))
@@ -256,39 +264,46 @@ void OnPlayerDeath(const char* sName, IGameEvent* event, bool bDontBroadcast)
 			}
 		}
 
-		if (g_iRespawns[iSlot] < iCount)
-		{
-			if(GetOnlinePlayers() < g_pVIPCore->VIP_GetClientFeatureInt(iSlot, "RespawnMinPlayers"))
-			{
-				g_pUtils->PrintToChat(iSlot, "%s %s", g_pVIPCore->VIP_GetTranslate("Prefix"), g_pVIPCore->VIP_GetTranslate("NotEnoughOnlinePlayersForRespawn"));
-			}
-			else
-			{
-				float fRespawnDelay = g_pVIPCore->VIP_GetClientFeatureFloat(iSlot, "RespawnDelay");
-				if (fRespawnDelay > 0)
-				{
-					g_pRespawnDelayTimers[iSlot] = g_pUtils->CreateTimer(g_pVIPCore->VIP_GetClientFeatureFloat(iSlot, "RespawnDelay"), [iSlot, iCount]() -> float {
-						if (iSlot < 0 || iSlot >= 64) return -1.0f;
-						g_isActive[iSlot] = true;
-						const char* prefix = g_pVIPCore->VIP_GetTranslate("Prefix");
-						const char* fmt   = g_pVIPCore->VIP_GetTranslate("RespawnAvailable");
-						char szResp[128];
-						snprintf(szResp, sizeof(szResp), fmt, iCount - g_iRespawns[iSlot]);
-						g_pUtils->PrintToChat(iSlot, "%s %s", prefix, szResp);
-						return -1.0f;
-					});
-				}
-				else
-				{
-					g_isActive[iSlot] = true;
-					const char* prefix = g_pVIPCore->VIP_GetTranslate("Prefix");
-					const char* fmt   = g_pVIPCore->VIP_GetTranslate("RespawnAvailable");
-					char szResp[128];
-					snprintf(szResp, sizeof(szResp), fmt, iCount - g_iRespawns[iSlot]);
-					g_pUtils->PrintToChat(iSlot, "%s %s", prefix, szResp);
-				}
-			}
-		}
+        if (g_iRespawns[iSlot] < iCount && !bRespawnTimeExpired)
+        {
+            if(GetOnlinePlayers() < g_pVIPCore->VIP_GetClientFeatureInt(iSlot, "RespawnMinPlayers"))
+            {
+                g_pUtils->PrintToChat(iSlot, "%s %s", g_pVIPCore->VIP_GetTranslate("Prefix"), g_pVIPCore->VIP_GetTranslate("NotEnoughOnlinePlayersForRespawn"));
+            }
+            else
+            {
+                float fRespawnDelay = g_pVIPCore->VIP_GetClientFeatureFloat(iSlot, "RespawnDelay");
+                if (fRespawnDelay > 0)
+                {
+                    g_pRespawnDelayTimers[iSlot] = g_pUtils->CreateTimer(g_pVIPCore->VIP_GetClientFeatureFloat(iSlot, "RespawnDelay"), [iSlot, iCount]() -> float {
+                        if (iSlot < 0 || iSlot >= 64) return -1.0f;
+                        
+                        if (g_pRespawnTimers[iSlot] == nullptr && !g_isActive[iSlot]) {
+                            return -1.0f;
+                        }
+                        
+                        g_isActive[iSlot] = true;
+                        const char* prefix = g_pVIPCore->VIP_GetTranslate("Prefix");
+                        const char* fmt   = g_pVIPCore->VIP_GetTranslate("RespawnAvailable");
+                        char szResp[128];
+                        snprintf(szResp, sizeof(szResp), fmt, iCount - g_iRespawns[iSlot]);
+                        g_pUtils->PrintToChat(iSlot, "%s %s", prefix, szResp);
+                        return -1.0f;
+                    });
+                }
+                else
+                {
+                    if (g_pRespawnTimers[iSlot] != nullptr || g_isActive[iSlot]) {
+                        g_isActive[iSlot] = true;
+                        const char* prefix = g_pVIPCore->VIP_GetTranslate("Prefix");
+                        const char* fmt   = g_pVIPCore->VIP_GetTranslate("RespawnAvailable");
+                        char szResp[128];
+                        snprintf(szResp, sizeof(szResp), fmt, iCount - g_iRespawns[iSlot]);
+                        g_pUtils->PrintToChat(iSlot, "%s %s", prefix, szResp);
+                    }
+                }
+            }
+        }
 	}
 }
 
