@@ -80,6 +80,7 @@ bool OnRespawnCommand(int iSlot, const char* szContent)
 				}
 				
 				g_iRespawns[iSlot]++;
+				g_isActive[iSlot] = false;
 				
 				g_pPlayers->Respawn(iSlot);
 
@@ -229,7 +230,7 @@ void OnPlayerDeath(const char* sName, IGameEvent* event, bool bDontBroadcast)
 						CCSPlayerController* pPlayerController =  CCSPlayerController::FromSlot(iSlot);
 						if(!pPlayerController) return -1.0f;
 						CCSPlayerPawn* pPlayerPawn = pPlayerController->m_hPlayerPawn();
-						if (!pPlayerPawn || !pPlayerPawn->IsAlive()) return -1.0f;
+						if (!pPlayerPawn || pPlayerPawn->IsAlive()) return -1.0f;
 						g_iRespawns[iSlot]++;
 						g_pPlayers->Respawn(iSlot);
 						int iHealth = g_pVIPCore->VIP_GetClientFeatureInt(iSlot, "HPAfterAutoRespawn");
@@ -248,7 +249,7 @@ void OnPlayerDeath(const char* sName, IGameEvent* event, bool bDontBroadcast)
 					CCSPlayerController* pPlayerController =  CCSPlayerController::FromSlot(iSlot);
 					if(!pPlayerController) return;
 					CCSPlayerPawn* pPlayerPawn = pPlayerController->m_hPlayerPawn();
-					if (!pPlayerPawn || !pPlayerPawn->IsAlive()) return;
+					if (!pPlayerPawn || pPlayerPawn->IsAlive()) return;
 					g_iRespawns[iSlot]++;
 					g_pPlayers->Respawn(iSlot);
 					int iHealth = g_pVIPCore->VIP_GetClientFeatureInt(iSlot, "HPAfterAutoRespawn");
