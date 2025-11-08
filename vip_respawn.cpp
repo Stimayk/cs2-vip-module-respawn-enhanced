@@ -165,10 +165,10 @@ void OnRoundStart(const char* szName, IGameEvent* pEvent, bool bDontBroadcast)
 
 void OnRoundEnd(const char* szName, IGameEvent* pEvent, bool bDontBroadcast)
 {
-    for (int i = 0; i < 64; i++)
+    for (int iSlot = 0; iSlot < 64; iSlot++)
     {
-        g_isActive[i] = false;
-        g_AisActive[i] = false;
+        g_isActive[iSlot] = false;
+        g_AisActive[iSlot] = false;
 		
         if (g_pRespawnTimers[iSlot]) {
             g_pUtils->RemoveTimer(g_pRespawnTimers[iSlot]);
