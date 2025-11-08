@@ -133,11 +133,11 @@ void OnRoundStart(const char* szName, IGameEvent* pEvent, bool bDontBroadcast)
         }
 		
 		g_iRespawns[iSlot] = 0;
-
-		if(g_pVIPCore->VIP_GetClientFeatureBool(iSlot, "AutoRespawn"))
+		
+        if (g_pVIPCore->VIP_GetClientFeatureBool(iSlot, "AutoRespawn"))
 		{
-			g_AisActive[iSlot] = true;
-		}
+            g_AisActive[iSlot] = true;
+        }
 	
 		float fNoRespawnDelay = g_pVIPCore->VIP_GetClientFeatureFloat(iSlot, "NoRespawnDelay");
 		if (fNoRespawnDelay > 0)
@@ -169,6 +169,23 @@ void OnRoundEnd(const char* szName, IGameEvent* pEvent, bool bDontBroadcast)
     {
         g_isActive[i] = false;
         g_AisActive[i] = false;
+		
+        if (g_pRespawnTimers[iSlot]) {
+            g_pUtils->RemoveTimer(g_pRespawnTimers[iSlot]);
+            g_pRespawnTimers[iSlot] = nullptr;
+        }
+        if (g_pAutoRespawnTimers[iSlot]) {
+            g_pUtils->RemoveTimer(g_pAutoRespawnTimers[iSlot]);
+            g_pAutoRespawnTimers[iSlot] = nullptr;
+        }
+        if (g_pRespawnDelayTimers[iSlot]) {
+            g_pUtils->RemoveTimer(g_pRespawnDelayTimers[iSlot]);
+            g_pRespawnDelayTimers[iSlot] = nullptr;
+        }
+        if (g_pAutoRespawnDelayTimers[iSlot]) {
+            g_pUtils->RemoveTimer(g_pAutoRespawnDelayTimers[iSlot]);
+            g_pAutoRespawnDelayTimers[iSlot] = nullptr;
+        }
     }
 }
 
@@ -201,12 +218,12 @@ void OnPlayerDeath(const char* sName, IGameEvent* event, bool bDontBroadcast)
 				{
 					g_pAutoRespawnDelayTimers[iSlot] = g_pUtils->CreateTimer(g_pVIPCore->VIP_GetClientFeatureFloat(iSlot, "AutoRespawnDelay"), [iSlot, iCount]() -> float {
 						if (iSlot < 0 || iSlot >= 64) return -1.0f;
-						g_iRespawns[iSlot]++;
-						g_pPlayers->Respawn(iSlot);
 						CCSPlayerController* pPlayerController =  CCSPlayerController::FromSlot(iSlot);
 						if(!pPlayerController) return -1.0f;
 						CCSPlayerPawn* pPlayerPawn = pPlayerController->m_hPlayerPawn();
 						if (!pPlayerPawn || !pPlayerPawn->IsAlive()) return -1.0f;
+						g_iRespawns[iSlot]++;
+						g_pPlayers->Respawn(iSlot);
 						int iHealth = g_pVIPCore->VIP_GetClientFeatureInt(iSlot, "HPAfterAutoRespawn");
 						pPlayerPawn->m_iHealth() = iHealth;
 						
@@ -220,14 +237,15 @@ void OnPlayerDeath(const char* sName, IGameEvent* event, bool bDontBroadcast)
 				}
 				else
 				{
-					g_iRespawns[iSlot]++;
-					g_pPlayers->Respawn(iSlot);
 					CCSPlayerController* pPlayerController =  CCSPlayerController::FromSlot(iSlot);
 					if(!pPlayerController) return;
 					CCSPlayerPawn* pPlayerPawn = pPlayerController->m_hPlayerPawn();
 					if (!pPlayerPawn || !pPlayerPawn->IsAlive()) return;
+					g_iRespawns[iSlot]++;
+					g_pPlayers->Respawn(iSlot);
 					int iHealth = g_pVIPCore->VIP_GetClientFeatureInt(iSlot, "HPAfterAutoRespawn");
 					pPlayerPawn->m_iHealth() = iHealth;
+					
 					const char* prefix = g_pVIPCore->VIP_GetTranslate("Prefix");
 					const char* fmt   = g_pVIPCore->VIP_GetTranslate("RespawnRemaining");
 					char szResp[128];
